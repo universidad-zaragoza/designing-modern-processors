@@ -15,5 +15,9 @@ set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
 find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 
+if(CMAKE_COMPILER_IS_GNUCXX)
+  add_compile_options(-march=native -ftree-vectorize)
+endif(CMAKE_COMPILER_IS_GNUCXX)
+
 add_subdirectory(pi-taylor)
 add_subdirectory(matrix-multiplication)

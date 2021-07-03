@@ -5,7 +5,7 @@
 #include <Eigen/Dense>
 
 constexpr size_t rows_cols = 1024;
-using matrix = Eigen::Matrix<float, rows_cols, rows_cols>;
+using matrix = Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>;
 
 namespace {
 
@@ -29,15 +29,22 @@ int
 main(int , const char *[])
 {
 
-  matrix a, b, c;
+  matrix a(rows_cols, rows_cols), b(rows_cols, rows_cols), c(rows_cols, rows_cols);
 
    std::random_device rd;
    std::mt19937 gen(rd());
    std::uniform_real_distribution<float> dis(-1.0f, 1.0f);
 
+  // only use random values for the first elements
+  a(0, 0) = dis(gen);
+  b(0, 0) = dis(gen);
   for(size_t i = 0; i < rows_cols; ++i) {
     for(size_t j = 0; j < rows_cols; ++j) {
-      a(i, j) = dis(gen);
+      if((i==0) && (j==0)) {
+        continue;
+      }
+      a(i, j) = static_cast<float>(i+j);
+      b(i, j) = static_cast<float>(i-j);
     }
   }
 
@@ -50,8 +57,7 @@ main(int , const char *[])
    std::cout << "The delay of multiplying two " << rows_cols << " x " << rows_cols
      << " matrices is: " << ex_time << "ms." << std::endl;
    std::cout << "c(1,1) = " << c(1,1) << std::endl;
+
+   return 0;
 }
-
-
-
 
