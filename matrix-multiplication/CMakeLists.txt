@@ -2,3 +2,6 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 
 ADD_DMP_EXECUTABLE(TARGET naive_matrix_multiplication SOURCES naive_matrix_multiplication.cc)
 ADD_DMP_EXECUTABLE(TARGET eigen_matrix_multiplication SOURCES eigen_matrix_multiplication.cc)
+ADD_DMP_EXECUTABLE(TARGET eigen_parallel_matrix_multiplication SOURCES eigen_matrix_multiplication.cc)
+target_compile_options(eigen_parallel_matrix_multiplication PUBLIC "-fopenmp")
+target_link_libraries(eigen_parallel_matrix_multiplication gomp)
