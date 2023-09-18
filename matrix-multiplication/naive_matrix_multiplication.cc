@@ -15,8 +15,6 @@
 constexpr size_t rows_cols = 1024;
 using matrix = Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>;
 
-
-
 namespace {
 
 void
@@ -39,8 +37,6 @@ naive_matrix_multiplication(const matrix& a, const matrix& b, matrix& c, int ini
 int
 main(int , const char *argv[])
 {
-
-
   matrix a(rows_cols, rows_cols), b(rows_cols, rows_cols), c(rows_cols, rows_cols);
 
    std::random_device rd;

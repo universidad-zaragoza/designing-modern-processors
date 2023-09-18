@@ -16,7 +16,7 @@ find_package(Threads REQUIRED)
 find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 find_package(OpenMP)
 
-option(CUBLAS "Enables cuBLAS matrix multiplication code" OFF)
+option(CUBLAS "Enables cuBLAS matrix multiplication code" ON)
 
 if(CUBLAS)
   find_package(cuBLAS)
