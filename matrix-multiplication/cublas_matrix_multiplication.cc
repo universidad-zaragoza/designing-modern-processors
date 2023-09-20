@@ -32,6 +32,8 @@
  */
 
 /* Includes, system */
+#include <chrono>
+#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -42,7 +44,7 @@
 #include <helper_cuda.h>
 
 /* Matrix size */
-#define N (275)
+constexpr size_t N = 1024;
 
 /* Host implementation of a simple version of sgemm */
 static void simple_sgemm(int n, float alpha, const float *A, const float *B,
@@ -76,8 +78,7 @@ int main(int argc, char **argv) {
   float *d_C = 0;
   float alpha = 1.0f;
   float beta = 0.0f;
-  int n2 = N * N;
-  int i;
+  size_t n2 = N * N;
   float error_norm;
   float ref_norm;
   float diff;
@@ -122,11 +123,16 @@ int main(int argc, char **argv) {
   }
 
   /* Fill the matrices with test data */
-  for (i = 0; i < n2; i++) {
+  for (size_t i = 0; i < n2; i++) {
     h_A[i] = rand() / static_cast<float>(RAND_MAX);
     h_B[i] = rand() / static_cast<float>(RAND_MAX);
     h_C[i] = rand() / static_cast<float>(RAND_MAX);
   }
+
+  /* Performs operation using plain C code */
+  simple_sgemm(N, alpha, h_A, h_B, beta, h_C);
+  h_C_ref = h_C;
+
 
   /* Allocate device memory for the matrices */
   if (cudaMalloc(reinterpret_cast<void **>(&d_A), n2 * sizeof(d_A[0])) !=
@@ -147,6 +153,16 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
 
+  /* Allocate host memory for reading back the result from device memory */
+  h_C = reinterpret_cast<float *>(malloc(n2 * sizeof(h_C[0])));
+
+  if (h_C == 0) {
+    fprintf(stderr, "!!!! host memory allocation error (C)\n");
+    return EXIT_FAILURE;
+  }
+
+
+  auto start = std::chrono::steady_clock::now();
   /* Initialize the device matrices with the host matrices */
   status = cublasSetVector(n2, sizeof(h_A[0]), h_A, 1, d_A, 1);
 
@@ -169,24 +185,12 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
 
-  /* Performs operation using plain C code */
-  simple_sgemm(N, alpha, h_A, h_B, beta, h_C);
-  h_C_ref = h_C;
-
   /* Performs operation using cublas */
   status = cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha, d_A,
                        N, d_B, N, &beta, d_C, N);
 
   if (status != CUBLAS_STATUS_SUCCESS) {
     fprintf(stderr, "!!!! kernel execution error.\n");
-    return EXIT_FAILURE;
-  }
-
-  /* Allocate host memory for reading back the result from device memory */
-  h_C = reinterpret_cast<float *>(malloc(n2 * sizeof(h_C[0])));
-
-  if (h_C == 0) {
-    fprintf(stderr, "!!!! host memory allocation error (C)\n");
     return EXIT_FAILURE;
   }
 
@@ -198,11 +202,16 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
 
+  auto stop = std::chrono::steady_clock::now();
+  double ex_time = std::chrono::duration_cast<std::chrono::milliseconds>(stop-start).count();
+  std::cout << "The delay of multiplying two " << N << " x " << N
+    << " matrices is: " << ex_time << "ms." << std::endl;
+
   /* Check result against reference */
   error_norm = 0;
   ref_norm = 0;
 
-  for (i = 0; i < n2; ++i) {
+  for (size_t i = 0; i < n2; ++i) {
     diff = h_C_ref[i] - h_C[i];
     error_norm += diff * diff;
     ref_norm += h_C_ref[i] * h_C_ref[i];
