@@ -1,7 +1,6 @@
 #include <chrono>
 #include <iostream>
 #include <random>
-#include <chrono>
 #include <iomanip>
 #include <iostream>
 #include <limits>
@@ -71,13 +70,14 @@ main(int argc, const char *argv[])
   auto start = std::chrono::steady_clock::now();
 
   // divide the steps into threads
+  // ToDo ensure rows_cols is a power of threads
   auto steps_per_thread = rows_cols / threads;
 
   thread_vector.reserve(threads);
   for(int i = 0; i < threads; ++i) {
       int begin = i * steps_per_thread;
       int end = begin + (steps_per_thread - 1);
-      thread_vector.push_back(std::thread(naive_matrix_multiplication, std::ref(a), std::ref(b), std::ref(c), begin, end));
+      thread_vector.push_back(std::thread(naive_matrix_multiplication, std::cref(a), std::cref(b), std::ref(c), begin, end));
   }
 
   // wait for all threads to complete
