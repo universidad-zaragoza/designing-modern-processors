@@ -23,7 +23,7 @@ naive_matrix_multiplication(const matrix& a, const matrix& b, matrix& c, int beg
     for(int j = 0; j < b.cols(); ++j) { // cols
       float sum = 0.0f;
       for(int k = 0; k < a.cols(); ++k) {
-        sum+=a(i,k)+b(k,j);
+        sum+=a(i,k)*b(k,j);
       }
       c(i,j)=sum;
     }
