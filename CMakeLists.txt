@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 3.1)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 include(AddDmpExecutable)
 
-project (DESIGNING_MODERN_PROCESSORS)
+project (DESIGNING_MODERN_PROCESSORS CXX)
 
 
 set(CMAKE_CXX_STANDARD 11)
