@@ -43,8 +43,9 @@
 #include <cuda_runtime.h>
 #include <helper_cuda.h>
 
-/* Matrix size */
-constexpr size_t N = 1024;
+#include <constants.h>
+
+using namespace constants;
 
 /* Host implementation of a simple version of sgemm */
 static void simple_sgemm(int n, float alpha, const float *A, const float *B,
@@ -73,12 +74,12 @@ int main(int argc, char **argv) {
   float *h_B;
   float *h_C;
   float *h_C_ref;
-  float *d_A = 0;
-  float *d_B = 0;
-  float *d_C = 0;
+  float *d_A = nullptr;
+  float *d_B = nullptr;
+  float *d_C = nullptr;
   float alpha = 1.0f;
   float beta = 0.0f;
-  size_t n2 = N * N;
+  size_t n2 = rows_cols * rows_cols;
   float error_norm;
   float ref_norm;
   float diff;
@@ -130,7 +131,7 @@ int main(int argc, char **argv) {
   }
 
   /* Performs operation using plain C code */
-  simple_sgemm(N, alpha, h_A, h_B, beta, h_C);
+  simple_sgemm(rows_cols, alpha, h_A, h_B, beta, h_C);
   h_C_ref = h_C;
 
 
@@ -186,8 +187,8 @@ int main(int argc, char **argv) {
   }
 
   /* Performs operation using cublas */
-  status = cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha, d_A,
-                       N, d_B, N, &beta, d_C, N);
+  status = cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, rows_cols, rows_cols,
+      rows_cols, &alpha, d_A, rows_cols, d_B, rows_cols, &beta, d_C, rows_cols);
 
   if (status != CUBLAS_STATUS_SUCCESS) {
     fprintf(stderr, "!!!! kernel execution error.\n");
@@ -204,7 +205,7 @@ int main(int argc, char **argv) {
 
   auto stop = std::chrono::steady_clock::now();
   double ex_time = std::chrono::duration_cast<std::chrono::milliseconds>(stop-start).count();
-  std::cout << "The delay of multiplying two " << N << " x " << N
+  std::cout << "The delay of multiplying two " << rows_cols << " x " << rows_cols
     << " matrices is: " << ex_time << "ms." << std::endl;
 
   /* Check result against reference */

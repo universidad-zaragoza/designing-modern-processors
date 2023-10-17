@@ -11,7 +11,9 @@
 #include <vector>
 #include <Eigen/Dense>
 
-constexpr size_t rows_cols = 1024;
+#include <constants.h>
+
+using namespace constants;
 using matrix = Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>;
 
 namespace {
