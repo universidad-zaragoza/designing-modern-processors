@@ -43,9 +43,22 @@
 #include <cuda_runtime.h>
 #include <helper_cuda.h>
 
+#include <Eigen/Dense>
+
 #include <constants.h>
 
 using namespace constants;
+using matrix = Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>;
+
+namespace {
+
+void eigen_matrix_multiplication(float alpha, const matrix&a, const matrix& b,
+    float beta, matrix& c)
+{
+  c = alpha * a * b + beta * c;
+}
+
+}
 
 /* Host implementation of a simple version of sgemm */
 static void simple_sgemm(int n, float alpha, const float *A, const float *B,
@@ -70,19 +83,16 @@ static void simple_sgemm(int n, float alpha, const float *A, const float *B,
 /* Main */
 int main(int argc, char **argv) {
   cublasStatus_t status;
-  float *h_A;
-  float *h_B;
-  float *h_C;
-  float *h_C_ref;
+  float *h_A = nullptr;
+  float *h_B = nullptr;
+  float *h_C = nullptr;
+  float *h_C_ref = nullptr;
   float *d_A = nullptr;
   float *d_B = nullptr;
   float *d_C = nullptr;
-  float alpha = 1.0f;
-  float beta = 0.0f;
-  size_t n2 = rows_cols * rows_cols;
-  float error_norm;
-  float ref_norm;
-  float diff;
+  const float alpha = 1.0f;
+  const float beta = 0.0f;
+  const size_t n2 = rows_cols * rows_cols;
   cublasHandle_t handle;
 
   int dev = findCudaDevice(argc, (const char **)argv);
@@ -123,17 +133,53 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
 
-  /* Fill the matrices with test data */
-  for (size_t i = 0; i < n2; i++) {
-    h_A[i] = rand() / static_cast<float>(RAND_MAX);
-    h_B[i] = rand() / static_cast<float>(RAND_MAX);
-    h_C[i] = rand() / static_cast<float>(RAND_MAX);
+  matrix e_A(rows_cols, rows_cols), e_B(rows_cols, rows_cols), e_C(rows_cols, rows_cols);
+  /* Fill the matrices with test data, only use
+   * random for the first elements */
+  h_A[0] = rand() / static_cast<float>(RAND_MAX);
+  e_A(0, 0) = h_A[0];
+  h_B[0] = rand() / static_cast<float>(RAND_MAX);
+  e_B(0, 0) = h_B[0];
+  h_C[0] = rand() / static_cast<float>(RAND_MAX);
+  e_C(0, 0) =h_C[0];
+  for(size_t k = 0;k < rows_cols; ++k) {
+    for(size_t j = 0;j < rows_cols; ++j) {
+      if((k == 0) && (j == 0)) { // FIXME
+        continue;
+      }
+      size_t i = k *rows_cols + j;
+      h_A[i] = (h_A[i-1] + 1.0f) / static_cast<float>(RAND_MAX);
+      h_B[i] = (h_B[i-1] + h_A[i-1]) / static_cast<float>(RAND_MAX);
+      h_C[i] = (h_C[i-1] - h_B[i-1] + 3.14f) / static_cast<float>(RAND_MAX);
+      e_A(k, j) = h_A[i];
+      e_B(k, j) = h_B[i];
+      e_C(k, j) = h_C[i];
+    }
   }
 
   /* Performs operation using plain C code */
-  simple_sgemm(rows_cols, alpha, h_A, h_B, beta, h_C);
-  h_C_ref = h_C;
+  // simple_sgemm(rows_cols, alpha, h_A, h_B, beta, h_C);
+  // h_C_ref = h_C;
 
+  eigen_matrix_multiplication(alpha, e_A, e_B, beta, e_C);
+  h_C_ref = reinterpret_cast<float *>(malloc(n2 * sizeof(h_C[0])));
+
+  // check eigen and reference
+  float eigen_error_norm{0.0f}, eigen_ref_norm{0.0f};
+  for (size_t i = 0; i < rows_cols; ++i) {
+    for(size_t j = 0; j < rows_cols; ++j) {
+      size_t k = i * rows_cols+j;
+      float e_diff = h_C_ref[i*rows_cols+j] - e_C(i, j);
+      eigen_error_norm += e_diff * e_diff;
+      eigen_ref_norm += e_C(i, j) * e_C(i, j);
+      h_C_ref[k] = e_C(i, j);
+    }
+  }
+
+  if(fabs(eigen_ref_norm) < 1e-7) {
+    fprintf(stderr, "!!!! reference norm is 0\n");
+    return EXIT_FAILURE;
+  }
 
   /* Allocate device memory for the matrices */
   if (cudaMalloc(reinterpret_cast<void **>(&d_A), n2 * sizeof(d_A[0])) !=
@@ -209,11 +255,11 @@ int main(int argc, char **argv) {
     << " matrices is: " << ex_time << "ms." << std::endl;
 
   /* Check result against reference */
-  error_norm = 0;
-  ref_norm = 0;
+  float error_norm = 0;
+  float ref_norm = 0;
 
   for (size_t i = 0; i < n2; ++i) {
-    diff = h_C_ref[i] - h_C[i];
+    float diff = h_C_ref[i] - h_C[i];
     error_norm += diff * diff;
     ref_norm += h_C_ref[i] * h_C_ref[i];
   }
