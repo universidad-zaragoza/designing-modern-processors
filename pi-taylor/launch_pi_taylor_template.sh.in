@@ -1,0 +1,13 @@
+#!/bin/bash
+
+RUN_DIR="@MY_BINARY_OUTPUT_DIR@"
+
+cd "${RUN_DIR}"
+
+tmpname=$(mktemp -p ./ pi-taylor_XXX)
+
+for th in 1 2 4 8 16
+do
+    echo "Running for $th threads" >> "$tmpname"
+    perf stat -a -e power/energy-cores/ -r 5 ./pi_taylor_parallel 100000000 $th >> "$tmpname" 2>&1
+done
