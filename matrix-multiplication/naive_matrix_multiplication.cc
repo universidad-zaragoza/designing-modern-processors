@@ -38,7 +38,7 @@ naive_matrix_multiplication(const matrix& a, const matrix& b, matrix& c, int beg
 int
 main(int argc, const char *argv[])
 {
-  matrix a(rows_cols, rows_cols), b(rows_cols, rows_cols), c(rows_cols, rows_cols);
+  matrix a(rows_cols_small, rows_cols_small), b(rows_cols_small, rows_cols_small), c(rows_cols_small, rows_cols_small);
 
   std::random_device rd;
   std::mt19937 gen(rd());
@@ -55,8 +55,8 @@ main(int argc, const char *argv[])
    // only use random values for the first elements
    a(0, 0) = dis(gen);
    b(0, 0) = dis(gen);
-   for(size_t i = 0; i < rows_cols; ++i) {
-     for(size_t j = 0; j < rows_cols; ++j) {
+   for(size_t i = 0; i < rows_cols_small; ++i) {
+     for(size_t j = 0; j < rows_cols_small; ++j) {
        if((i==0) && (j==0)) {
          continue;
        }
@@ -73,7 +73,7 @@ main(int argc, const char *argv[])
 
   // divide the steps into threads
   // ToDo ensure rows_cols is a multiple  of the number of threads
-  auto steps_per_thread = rows_cols / threads;
+  auto steps_per_thread = rows_cols_small / threads;
 
   thread_vector.reserve(threads);
   for(int i = 0; i < threads; ++i) {
@@ -89,7 +89,7 @@ main(int argc, const char *argv[])
 
   auto stop = std::chrono::steady_clock::now();
   double ex_time = std::chrono::duration_cast<std::chrono::milliseconds>(stop-start).count();
-  std::cout << "The delay of multiplying two " << rows_cols << " x " << rows_cols
+  std::cout << "The delay of multiplying two " << rows_cols_small << " x " << rows_cols_small
     << " matrices is: " << ex_time << "ms." << std::endl;
   std::cout << "c(1,1) = " << c(1,1) << std::endl;
   return 0;

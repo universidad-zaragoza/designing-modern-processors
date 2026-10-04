@@ -3,8 +3,8 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}) # for constants.h
 ADD_DMP_EXECUTABLE(TARGET naive_matrix_multiplication SOURCES naive_matrix_multiplication.cc)
 target_include_directories(naive_matrix_multiplication PRIVATE ${EIGEN3_INCLUDE_DIR})
 
-ADD_DMP_EXECUTABLE(TARGET eigen_matrix_multiplication SOURCES eigen_matrix_multiplication.cc)
-target_include_directories(eigen_matrix_multiplication PRIVATE ${EIGEN3_INCLUDE_DIR})
+ADD_DMP_EXECUTABLE(TARGET eigen_single_thread_matrix_multiplication SOURCES eigen_matrix_multiplication.cc)
+target_include_directories(eigen_single_thread_matrix_multiplication PRIVATE ${EIGEN3_INCLUDE_DIR})
 
 ADD_DMP_EXECUTABLE(TARGET eigen_parallel_matrix_multiplication SOURCES eigen_matrix_multiplication.cc)
 target_compile_options(eigen_parallel_matrix_multiplication PUBLIC "-fopenmp")
